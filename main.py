@@ -5,13 +5,16 @@ import pyocr
 from PIL import Image
 
 LANG='chi_sim'
+TEXT_TOP = 810 / 934
+TEXT_BOTTOM = 888 / 914
 
 
 def main():
   img = cv2.imread('./scene_from_love_me_if_you_dare.png')
-  out_img = cv2.inRange(img, (200, 200, 200), (255, 255, 255))
-  show_image(out_img)
-  pil_img = Image.fromarray(out_img)
+  img = cv2.inRange(img, (200, 200, 200), (255, 255, 255))
+  img = crop_to_text_region(img)
+  show_image(img)
+  pil_img = Image.fromarray(img)
   text = get_tool().image_to_string(
     pil_img,
     lang=LANG,
@@ -22,6 +25,11 @@ def main():
 def get_tool():
   tool = pyocr.get_available_tools()[0]
   return tool
+
+
+def crop_to_text_region(img):
+  width, height = img.shape
+  return img[int(width * TEXT_TOP) : int(width * TEXT_BOTTOM), :]
 
 
 def show_image(img):
