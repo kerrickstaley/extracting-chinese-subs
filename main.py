@@ -11,7 +11,7 @@ TEXT_BOTTOM = 888 / 914
 
 def main():
   img = cv2.imread('./scene_from_love_me_if_you_dare.png')
-  img = cv2.inRange(img, (200, 200, 200), (255, 255, 255))
+  img = cv2.inRange(img, (180, 180, 180), (255, 255, 255))
   img = crop_to_text_region(img)
   show_image(img)
   pil_img = Image.fromarray(img)
