@@ -11,20 +11,33 @@ TEXT_BOTTOM = 888 / 914
 
 
 def main():
-  process_img(cv2.imread('./scene_from_love_me_if_you_dare.png'))
+  cap = cv2.VideoCapture('./love_me_if_you_dare_ep1.ts')
+  success = True
+  counter = 0
+  while success:
+    counter += 1
+    success, frame = cap.read()
+    if counter % 25:
+      continue
+    processed, text = get_processed_img_and_text(frame)
+    print('{}s'.format(counter / 25), text)
+    if text:
+      show_unprocessed_processed(frame, processed)
 
 
-def process_img(img):
+def get_processed_img_and_text(img):
   img = crop_to_text_region(img)
   img = threshold(img)
   img = dilate_erode(img)
-  show_image(img)
+  # average character is 581 pixels
+  if np.count_nonzero(img) < 1000:
+    return img, ''
   pil_img = Image.fromarray(img)
   text = get_tool().image_to_string(
     pil_img,
     lang=LANG,
   )
-  print(text)
+  return img, text
 
 
 def get_tool():
@@ -56,6 +69,15 @@ def dilate_erode(img):
 def show_image(img):
   cv2.imshow('image', img)
   cv2.waitKey(0)
+  cv2.destroyAllWindows()
+
+
+def show_unprocessed_processed(unp, p):
+  cv2.imshow('unprocessed', unp)
+  cv2.imshow('processed', p)
+  while cv2.waitKey(100) != ord('j'):
+    pass
+
   cv2.destroyAllWindows()
 
 
