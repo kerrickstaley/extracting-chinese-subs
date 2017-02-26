@@ -39,7 +39,7 @@ def crop_to_text_region(img):
 
 def threshold(img):
   hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-  return cv2.inRange(hsv, (0, 0, 220), (179, 30, 255))
+  return cv2.inRange(hsv, (0, 0, 170), (179, 25, 255))
 
 
 def dilate_erode(img):
