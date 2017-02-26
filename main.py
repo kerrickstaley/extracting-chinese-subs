@@ -11,8 +11,8 @@ TEXT_BOTTOM = 888 / 914
 
 def main():
   img = cv2.imread('./scene_from_love_me_if_you_dare.png')
-  img = cv2.inRange(img, (180, 180, 180), (255, 255, 255))
   img = crop_to_text_region(img)
+  img = threshold(img)
   show_image(img)
   pil_img = Image.fromarray(img)
   text = get_tool().image_to_string(
@@ -28,8 +28,15 @@ def get_tool():
 
 
 def crop_to_text_region(img):
-  width, height = img.shape
+  if len(img.shape) == 3:
+    width, height, _ = img.shape
+  else:
+    width, height = img.shape
   return img[int(width * TEXT_TOP) : int(width * TEXT_BOTTOM), :]
+
+
+def threshold(img):
+  return cv2.inRange(img, (180, 180, 180), (255, 255, 255))
 
 
 def show_image(img):
