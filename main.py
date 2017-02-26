@@ -11,7 +11,10 @@ TEXT_BOTTOM = 888 / 914
 
 
 def main():
-  img = cv2.imread('./scene_from_love_me_if_you_dare.png')
+  process_img(cv2.imread('./scene_from_love_me_if_you_dare.png'))
+
+
+def process_img(img):
   img = crop_to_text_region(img)
   img = threshold(img)
   img = dilate_erode(img)
