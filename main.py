@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from argparse import ArgumentParser
 import cv2
 import sys
 import pyocr
@@ -9,20 +10,26 @@ LANG='chi_sim'
 TEXT_TOP = 810 / 934
 TEXT_BOTTOM = 888 / 914
 
+parser = ArgumentParser(description='extract subtitles')
+parser.add_argument('--dump_test_cases', action='store_true')
 
-def main():
+
+def main(args):
   cap = cv2.VideoCapture('./love_me_if_you_dare_ep1.ts')
   success = True
-  counter = 0
+  frame_idx = -1
   while success:
-    counter += 1
+    frame_idx += 1
     success, frame = cap.read()
-    if counter % 25:
+    if frame_idx % 25:
       continue
     processed, text = get_processed_img_and_text(frame)
-    print('{}s'.format(counter / 25), text)
+    print('{}s'.format(frame_idx / 25), text)
     if text:
-      show_unprocessed_processed(frame, processed)
+      if args.dump_test_cases:
+        cv2.imwrite('test_frame_{}__{}.png'.format(frame_idx, text), frame)
+      else:
+        show_unprocessed_processed(frame, processed)
 
 
 def get_processed_img_and_text(img):
@@ -82,4 +89,4 @@ def show_unprocessed_processed(unp, p):
 
 
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
-  main()
+  main(parser.parse_args())
