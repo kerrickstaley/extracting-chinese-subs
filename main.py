@@ -5,6 +5,8 @@ import sys
 import pyocr
 from PIL import Image
 import numpy as np
+import glob
+import unicodedata
 
 LANG='chi_sim'
 TEXT_TOP = 810 / 934
@@ -12,9 +14,17 @@ TEXT_BOTTOM = 888 / 914
 
 parser = ArgumentParser(description='extract subtitles')
 parser.add_argument('--dump_test_cases', action='store_true')
+parser.add_argument('--test_all', action='store_true')
+parser.add_argument('--test')
 
 
 def main(args):
+  if args.test_all:
+    test_all()
+    return
+  if args.test:
+    test_case(args.test, debug=True)
+    return
   cap = cv2.VideoCapture('./love_me_if_you_dare_ep1.ts')
   success = True
   frame_idx = -1
@@ -44,7 +54,18 @@ def get_processed_img_and_text(img):
     pil_img,
     lang=LANG,
   )
+  text = strip_non_chinese_characters(text)
   return img, text
+
+
+def strip_non_chinese_characters(txt):
+  rv = []
+  for c in txt:
+    if unicodedata.category(c) != 'Lo':
+      continue
+    rv.append(c)
+
+  return ''.join(rv)
 
 
 def get_tool():
@@ -86,6 +107,45 @@ def show_unprocessed_processed(unp, p):
     pass
 
   cv2.destroyAllWindows()
+
+
+def pad_string(s, l):
+  chars_taken = len(s)
+  for c in s:
+    if unicodedata.east_asian_width(c) == 'W':
+      chars_taken += 1
+
+  return s + ' ' * (l - chars_taken)
+
+
+def test_all():
+  passes = 0
+  cases = 0
+  for fname in sorted(glob.glob('test_frames/*.png')):
+    passes += test_case(fname)
+    cases += 1
+
+  print('==== passed {} / {} tests ({} %) ===='.format(
+    passes, cases, int(round(passes / cases * 100))))
+
+
+def test_case(fname, debug=False):
+  img = cv2.imread(fname)
+  expected_text = fname.split('__')[1][:-4]
+  processed, actual_text = get_processed_img_and_text(img)
+  # from IPython import embed; embed()
+  inital = pad_string('file {}:'.format(fname.split('/')[-1]), 60)
+  print(inital, end='')
+  if actual_text == expected_text:
+    print('PASSED')
+    if not debug:
+      return True
+  else:
+    print("FAILED; got '{}' expected '{}'".format(actual_text, expected_text))
+    if not debug:
+      return False
+
+  show_unprocessed_processed(img, processed)
 
 
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
