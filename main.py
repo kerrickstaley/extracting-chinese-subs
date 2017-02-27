@@ -43,10 +43,11 @@ def main(args):
 
 
 def get_processed_img_and_text(img):
-  img = crop_to_text_region(img)
-  img = threshold(img)
+  cropped = crop_to_text_region(img)
+  img = threshold(cropped)
   img = dilate_erode3(img)
   img = dilate3(img)
+  img = img & dilate_erode5(cv2.Canny(cropped, 400, 600))
   # average character is 581 pixels
   if np.count_nonzero(img) < 1000:
     return img, ''
