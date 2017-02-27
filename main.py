@@ -45,7 +45,8 @@ def main(args):
 def get_processed_img_and_text(img):
   img = crop_to_text_region(img)
   img = threshold(img)
-  img = dilate_erode(img)
+  img = dilate_erode3(img)
+  img = dilate3(img)
   # average character is 581 pixels
   if np.count_nonzero(img) < 1000:
     return img, ''
@@ -86,12 +87,25 @@ def threshold(img):
   return cv2.inRange(hsv, (0, 0, 170), (179, 25, 255))
 
 
-def dilate_erode(img):
+def dilate_erode5(img):
   "Closes the img"
   kernel = np.ones((5, 5), np.uint8)
   img = cv2.dilate(img, kernel)
   img = cv2.erode(img, kernel)
   return img
+
+
+def dilate_erode3(img):
+  "Closes the img"
+  kernel = np.ones((3, 3), np.uint8)
+  img = cv2.dilate(img, kernel)
+  img = cv2.erode(img, kernel)
+  return img
+
+
+def dilate3(img):
+  kernel = np.ones((3, 3), np.uint8)
+  return cv2.dilate(img, kernel)
 
 
 def show_image(img):
