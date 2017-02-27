@@ -7,6 +7,7 @@ from PIL import Image
 import numpy as np
 import glob
 import unicodedata
+import itertools
 
 LANG='chi_sim'
 TEXT_TOP = 810 / 934
@@ -60,7 +61,27 @@ def get_processed_img_and_text(img):
   return img, text
 
 
+def ngroupwise(n, iterable):
+  # generalization of the "pairwise" recipe
+  iterators = list(itertools.tee(iterable, n))
+  for i in range(n):
+    for j in range(i):
+      next(iterators[i], None)
+
+  return zip(*iterators)
+
+
 def strip_non_chinese_characters(txt):
+  # hack: tesseract interprets 一 as _
+  new_txt = [txt[0]]
+  for before, mid, after in ngroupwise(3, txt):
+    if mid == '_' and unicodedata.category(before) == unicodedata.category(after) == 'Lo':
+      new_txt.append('一')
+    else:
+      new_txt.append(mid)
+  new_txt.append(txt[-1])
+  txt = ''.join(new_txt)
+
   rv = []
   for c in txt:
     if unicodedata.category(c) != 'Lo':
