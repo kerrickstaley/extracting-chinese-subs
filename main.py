@@ -17,6 +17,7 @@ parser = ArgumentParser(description='extract subtitles')
 parser.add_argument('--dump-test-cases', action='store_true')
 parser.add_argument('--test-all', action='store_true')
 parser.add_argument('--test')
+parser.add_argument('--dump-text', action='store_true')
 
 
 def main(args):
@@ -35,12 +36,16 @@ def main(args):
     if frame_idx % 25:
       continue
     processed, text = get_processed_img_and_text(frame)
-    print('{}s'.format(frame_idx / 25), text)
-    if text:
-      if args.dump_test_cases:
-        cv2.imwrite('test_frame_{}__{}.png'.format(frame_idx, text), frame)
-      else:
-        show_unprocessed_processed(frame, processed)
+    if args.dump_text:
+      if text:
+        print(text)
+    else:
+      print('{}s'.format(frame_idx / 25), text)
+      if text:
+        if args.dump_test_cases:
+          cv2.imwrite('test_frame_{}__{}.png'.format(frame_idx, text), frame)
+        else:
+          show_unprocessed_processed(frame, processed)
 
 
 def get_processed_img_and_text(img):
@@ -72,6 +77,8 @@ def ngroupwise(n, iterable):
 
 
 def strip_non_chinese_characters(txt):
+  if not txt:
+    return ''
   # hack: tesseract interprets 一 as _
   new_txt = [txt[0]]
   for before, mid, after in ngroupwise(3, txt):
