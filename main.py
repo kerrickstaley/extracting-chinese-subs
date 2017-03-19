@@ -14,8 +14,8 @@ TEXT_TOP = 810 / 934
 TEXT_BOTTOM = 888 / 914
 
 parser = ArgumentParser(description='extract subtitles')
-parser.add_argument('--dump_test_cases', action='store_true')
-parser.add_argument('--test_all', action='store_true')
+parser.add_argument('--dump-test-cases', action='store_true')
+parser.add_argument('--test-all', action='store_true')
 parser.add_argument('--test')
 
 
