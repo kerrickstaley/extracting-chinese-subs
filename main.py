@@ -18,6 +18,7 @@ parser.add_argument('--dump-test-cases', action='store_true')
 parser.add_argument('--test-all', action='store_true')
 parser.add_argument('--test')
 parser.add_argument('--dump-text', action='store_true')
+parser.add_argument('video_file')
 
 
 def main(args):
@@ -27,7 +28,7 @@ def main(args):
   if args.test:
     test_case(args.test, debug=True)
     return
-  cap = cv2.VideoCapture('./love_me_if_you_dare_ep1.ts')
+  cap = cv2.VideoCapture(args.video_file)
   success = True
   frame_idx = -1
   while success:
