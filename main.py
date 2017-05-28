@@ -22,15 +22,17 @@ parser.add_argument('--test')
 parser.add_argument('--dump-text', action='store_true')
 parser.add_argument('--cmp-old', help='old model to compare')
 parser.add_argument('--cmp-new', help='new model to compare')
+parser.add_argument('--model', help='model to use', default='e0')
 parser.add_argument('video_file', nargs='?')
 
 
 def main(args):
+  model_class = MODELS[args.model]
   if args.test_all:
-    test_all()
+    test_all(model_class)
     return
   if args.test:
-    test_case(args.test, debug=True)
+    test_case(model_class, args.test, debug=True)
     return
   if args.cmp_old:
     compare_models(MODELS[args.cmp_old], MODELS[args.cmp_new])
@@ -43,7 +45,7 @@ def main(args):
     success, frame = cap.read()
     if frame_idx % 25:
       continue
-    model = E0()
+    model = model_class()
     text = model.extract(frame)
     if args.dump_text:
       if text:
@@ -284,21 +286,21 @@ def get_all_test_frames():
       yield os.path.join(dirpath, filename)
 
 
-def test_all():
+def test_all(model_class):
   passes = 0
   cases = 0
   for fname in get_all_test_frames():
-    passes += test_case(fname)
+    passes += test_case(model_class, fname)
     cases += 1
 
   print('==== passed {} / {} tests ({} %) ===='.format(
     passes, cases, int(round(passes / cases * 100))))
 
 
-def test_case(fname, debug=False):
+def test_case(model_class, fname, debug=False):
   img = cv2.imread(fname)
   expected_text = fname.split('__')[1][:-4]
-  model = E1()
+  model = model_class()
   actual_text = model.extract(img)
   # from IPython import embed; embed()
   inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
