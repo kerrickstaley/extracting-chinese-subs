@@ -23,6 +23,7 @@ parser.add_argument('--dump-text', action='store_true')
 parser.add_argument('--cmp-old', help='old model to compare')
 parser.add_argument('--cmp-new', help='new model to compare')
 parser.add_argument('--model', help='model to use', default='e0')
+parser.add_argument('--debug', help='debug model', action='store_true')
 parser.add_argument('video_file', nargs='?')
 
 
@@ -32,7 +33,7 @@ def main(args):
     test_all(model_class)
     return
   if args.test:
-    test_case(model_class, args.test, debug=True)
+    test_case(model_class, args.test, debug=args.debug)
     return
   if args.cmp_old:
     compare_models(MODELS[args.cmp_old], MODELS[args.cmp_new])
@@ -168,11 +169,18 @@ class E0(TextExtractor):
 class E1(E0):
   def clean_after_crop(self, cropped):
     self.sharpened = img = sharpen(cropped)
+    if self.debug:
+      show_image(self.sharpened)
     self.thresholded = img = threshold(img, min_value=191)
+    if self.debug:
+      show_image(self.thresholded)
     self.canny_mask = cv2.Canny(cropped, 400, 600)
     self.canny_mask = dilate(self.canny_mask, 5)
     self.canny_mask = erode(self.canny_mask, 5)
     img &= self.canny_mask
+    if self.debug:
+      show_image(self.canny_mask)
+      show_image(img)
     img = remove_small_islands(img)
     img = dilate3(img)
     return img
@@ -245,6 +253,13 @@ def show_image(img):
   for name in lcls:
     if id(img) == id(lcls[name]):
       var_name = name
+      break
+  else:
+    if 'self' in lcls:
+      for k, v in lcls['self'].__dict__.items():
+        if id(img) == id(v):
+          var_name = 'self.' + k
+          break
 
   # resize image
   scale_factor = 4
@@ -300,7 +315,7 @@ def test_all(model_class):
 def test_case(model_class, fname, debug=False):
   img = cv2.imread(fname)
   expected_text = fname.split('__')[1][:-4]
-  model = model_class()
+  model = model_class(debug=debug)
   actual_text = model.extract(img)
   # from IPython import embed; embed()
   inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
