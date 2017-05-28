@@ -12,8 +12,6 @@ import pyocr
 from PIL import Image
 
 LANG='chi_sim'
-TEXT_TOP = 810 / 934
-TEXT_BOTTOM = 888 / 914
 
 parser = ArgumentParser(description='extract subtitles')
 parser.add_argument('--dump-test-cases', action='store_true')
@@ -150,12 +148,20 @@ class TextExtractor:
 
 
 class E0(TextExtractor):
+  TEXT_TOP = 810 / 934
+  TEXT_BOTTOM = 888 / 914
+  TEXT_LEFT = 250 / 1280  # min observed was 300 pixels in, each char is 50 pixels wide
+  TEXT_RIGHT = 1030 / 1280  # max observed was 300 pixels in from the right
+
   def clean_image(self, img):
     if len(img.shape) == 3:
-      width, height, _ = img.shape
+      height, width, _ = img.shape
     else:
-      width, height = img.shape
-    cropped = img[int(width * TEXT_TOP): int(width * TEXT_BOTTOM), :]
+      height, width = img.shape
+    # TODO this is weird
+    cropped = img[
+        int(height * self.TEXT_TOP): int(height * self.TEXT_BOTTOM),
+        int(width * self.TEXT_LEFT): int(width * self.TEXT_RIGHT)]
     return self.clean_after_crop(cropped)
 
   def clean_after_crop(self, cropped):
