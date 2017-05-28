@@ -141,7 +141,8 @@ def dilate3(img):
 
 def show_image(img):
   cv2.imshow('image', img)
-  cv2.waitKey(0)
+  if cv2.waitKey(0) == ord('q'):
+    raise Exception('quitting')
   cv2.destroyAllWindows()
 
 
