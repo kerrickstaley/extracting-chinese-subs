@@ -171,7 +171,7 @@ class E1(E0):
     self.thresholded = img = threshold(img, min_value=191)
     self.canny_mask = cv2.Canny(cropped, 400, 600)
     self.canny_mask = dilate(self.canny_mask, 5)
-    self.canny_mask = erode(self.canny_mask, 7)
+    self.canny_mask = erode(self.canny_mask, 5)
     img &= self.canny_mask
     img = remove_small_islands(img)
     img = dilate3(img)
