@@ -341,17 +341,20 @@ def pad_string(s, l):
 
 
 def get_all_test_frames():
+  rv = []
   for dirpath, dirnames, filenames in os.walk('test_frames'):
     if 'unprocessed' in dirpath.split('/'):
       continue
     for filename in filenames:
-      yield os.path.join(dirpath, filename)
+      rv.append(os.path.join(dirpath, filename))
+
+  return sorted(rv)
 
 
 def test_all(model_class):
   passes = 0
   cases = 0
-  for fname in sorted(get_all_test_frames()):
+  for fname in get_all_test_frames():
     passes += test_case(model_class, fname)
     cases += 1
 
