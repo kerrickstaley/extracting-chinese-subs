@@ -313,8 +313,12 @@ def show_image(img):
   img = cv2.resize(img, (0, 0), None, scale_factor, scale_factor, cv2.INTER_NEAREST)
 
   cv2.imshow(var_name, img)
-  if cv2.waitKey(0) == ord('q'):
-    raise Exception('quitting')
+  while True:
+    key = cv2.waitKey(0)
+    if key == ord('q'):
+      raise Exception('quitting')
+    if ord(' ') <= key <= ord('~'):
+      break
   cv2.destroyAllWindows()
 
 
