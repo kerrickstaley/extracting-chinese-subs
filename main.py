@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-from argparse import ArgumentParser
-import cv2
+import inspect
+import itertools
 import os
 import sys
+import unicodedata
+from argparse import ArgumentParser
+
+import cv2
+import numpy as np
 import pyocr
 from PIL import Image
-import numpy as np
-import glob
-import unicodedata
-import itertools
 
 LANG='chi_sim'
 TEXT_TOP = 810 / 934
@@ -169,7 +170,18 @@ def dilate3(img):
 
 
 def show_image(img):
-  cv2.imshow('image', img)
+  # compute the name of the object we're displaying
+  var_name = '(unknown image)'
+  lcls = inspect.stack()[1][0].f_locals
+  for name in lcls:
+    if id(img) == id(lcls[name]):
+      var_name = name
+
+  # resize image
+  scale_factor = 4
+  img = cv2.resize(img, (0, 0), None, scale_factor, scale_factor, cv2.INTER_NEAREST)
+
+  cv2.imshow(var_name, img)
   if cv2.waitKey(0) == ord('q'):
     raise Exception('quitting')
   cv2.destroyAllWindows()
