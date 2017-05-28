@@ -183,13 +183,41 @@ class E1(E0):
     self.canny_mask = cv2.Canny(cropped, 400, 600)
     self.canny_mask = dilate(self.canny_mask, 5)
     self.canny_mask = erode(self.canny_mask, 5)
-    img &= self.canny_mask
+    img = img & self.canny_mask
     if self.debug:
       show_image(self.canny_mask)
       show_image(img)
     img = remove_small_islands(img)
     img = dilate3(img)
     return img
+
+
+class E2(E1):
+  def get_border_floodfill_mask(self):
+    mask = np.zeros(self.thresholded.shape)
+    _, contours, hierarchy = cv2.findContours(self.thresholded, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+    for root_idx, contour in enumerate(contours):
+      left, top, width, height = cv2.boundingRect(contour)
+      right = left + width
+      bottom = top + height
+      if not (top <= 1 or left <= 1
+              or bottom >= self.thresholded.shape[0] - 2 or right >= self.thresholded.shape[1] - 2):
+        continue
+
+      cv2.fillPoly(mask, pts=[contour], color=(255, 255, 255))
+      for child_contour, (_, _, _, parent_idx) in zip(contours, hierarchy[0]):  # TODO no idea why we have to do [0]
+        if parent_idx != root_idx:
+          continue
+        cv2.fillPoly(mask, pts=[child_contour], color=(0, 0, 0))
+
+    self.border_floodfill_mask = mask
+    if self.debug:
+      show_image(mask)
+    return mask
+
+  def clean_after_crop(self, cropped):
+    img = super().clean_after_crop(cropped)
+    return img - self.get_border_floodfill_mask()
 
 
 def ngroupwise(n, iterable):
@@ -254,18 +282,24 @@ def remove_small_islands(img, min_pixels=2):
 
 def show_image(img):
   # compute the name of the object we're displaying
-  var_name = '(unknown image)'
+  var_name = None
   lcls = inspect.stack()[1][0].f_locals
-  for name in lcls:
-    if id(img) == id(lcls[name]):
-      var_name = name
-      break
-  else:
-    if 'self' in lcls:
-      for k, v in lcls['self'].__dict__.items():
-        if id(img) == id(v):
-          var_name = 'self.' + k
-          break
+  if 'self' in lcls:
+    for k, v in lcls['self'].__dict__.items():
+      if id(img) == id(v):
+        var_name = 'self.' + k
+        break
+
+  if var_name is None:
+    for name in lcls:
+      if name == '_':
+        continue
+      if id(img) == id(lcls[name]):
+        var_name = name
+        break
+
+  if var_name is None:
+    var_name = '(unknown image)'
 
   # resize image
   scale_factor = 4
@@ -341,6 +375,7 @@ def test_case(model_class, fname, debug=False):
 MODELS = {
   'e0': E0,
   'e1': E1,
+  'e2': E2,
 }
 
 
