@@ -37,7 +37,8 @@ def main(args):
     success, frame = cap.read()
     if frame_idx % 25:
       continue
-    processed, text = get_processed_img_and_text(frame)
+    model = E0()
+    text = model.extract(frame)
     if args.dump_text:
       if text:
         print(text)
@@ -47,25 +48,88 @@ def main(args):
         if args.dump_test_cases:
           cv2.imwrite('test_frame_{}__{}.png'.format(frame_idx, text), frame)
         else:
-          show_unprocessed_processed(frame, processed)
+          show_unprocessed_processed(frame, model.cleaned)
 
 
-def get_processed_img_and_text(img):
-  cropped = crop_to_text_region(img)
-  img = threshold(cropped)
-  img = dilate_erode3(img)
-  img = dilate3(img)
-  img = img & dilate_erode5(cv2.Canny(cropped, 400, 600))
-  # average character is 581 pixels
-  if np.count_nonzero(img) < 1000:
-    return img, ''
-  pil_img = Image.fromarray(img)
-  text = get_tool().image_to_string(
-    pil_img,
-    lang=LANG,
-  )
-  text = strip_non_chinese_characters(text)
-  return img, text
+class TextExtractor:
+  def __init__(self, debug=False):
+    self.debug = debug
+
+  def extract(self, img):
+    """
+    :param numpy.array img: frame of video
+    :return str: extracted subtitle text ('' if there is no subtitle)
+    """
+    self.cleaned = self.clean_image(img)
+    self.raw_text = self.run_ocr(self.cleaned)
+    return self.post_process_text(self.raw_text)
+
+  def clean_image(self, img):
+    """
+    :param numpy.array img: frame of video
+    :return numpy.array cleaned: cleaned image, ready to run through OCR
+    """
+    raise NotImplementedError
+
+  def post_process_text(self, text):
+    """
+    :param str text: text returned by OCR step
+    :return str: cleaned text
+    """
+    if not text:
+      return ''
+
+    # hack: tesseract interprets 一 as _
+    new_text = [text[0]]
+    for before, mid, after in ngroupwise(3, text):
+      if mid == '_' and unicodedata.category(before) == unicodedata.category(after) == 'Lo':
+        new_text.append('一')
+      else:
+        new_text.append(mid)
+    new_text.append(text[-1])
+    txt = ''.join(new_text)
+
+    # strip out non-Chinese characters
+    rv = []
+    for c in txt:
+      if unicodedata.category(c) != 'Lo':
+        continue
+      rv.append(c)
+
+    return ''.join(rv)
+
+  def run_ocr(self, img):
+    """
+    :param numpy.array img: cleaned image
+    :return str: extracted subtitle text ('' if there is no subtitle)
+    """
+    # average character is 581 pixels
+    if np.count_nonzero(img) < 1000:
+      return ''
+
+    tool = pyocr.get_available_tools()[0]
+    pil_img = Image.fromarray(img)
+    return tool.image_to_string(
+        pil_img,
+        lang=LANG,
+      )
+
+
+class E0(TextExtractor):
+  def clean_image(self, img):
+    if len(img.shape) == 3:
+      width, height, _ = img.shape
+    else:
+      width, height = img.shape
+    cropped = img[int(width * TEXT_TOP): int(width * TEXT_BOTTOM), :]
+    return self.clean_after_crop(cropped)
+
+  def clean_after_crop(self, cropped):
+    img = threshold(cropped)
+    img = dilate_erode3(img)
+    img = dilate3(img)
+    img = img & dilate_erode5(cv2.Canny(cropped, 400, 600))
+    return img
 
 
 def ngroupwise(n, iterable):
@@ -76,41 +140,6 @@ def ngroupwise(n, iterable):
       next(iterators[i], None)
 
   return zip(*iterators)
-
-
-def strip_non_chinese_characters(txt):
-  if not txt:
-    return ''
-  # hack: tesseract interprets 一 as _
-  new_txt = [txt[0]]
-  for before, mid, after in ngroupwise(3, txt):
-    if mid == '_' and unicodedata.category(before) == unicodedata.category(after) == 'Lo':
-      new_txt.append('一')
-    else:
-      new_txt.append(mid)
-  new_txt.append(txt[-1])
-  txt = ''.join(new_txt)
-
-  rv = []
-  for c in txt:
-    if unicodedata.category(c) != 'Lo':
-      continue
-    rv.append(c)
-
-  return ''.join(rv)
-
-
-def get_tool():
-  tool = pyocr.get_available_tools()[0]
-  return tool
-
-
-def crop_to_text_region(img):
-  if len(img.shape) == 3:
-    width, height, _ = img.shape
-  else:
-    width, height = img.shape
-  return img[int(width * TEXT_TOP) : int(width * TEXT_BOTTOM), :]
 
 
 def threshold(img):
@@ -186,7 +215,8 @@ def test_all():
 def test_case(fname, debug=False):
   img = cv2.imread(fname)
   expected_text = fname.split('__')[1][:-4]
-  processed, actual_text = get_processed_img_and_text(img)
+  model = E0()
+  actual_text = model.extract(img)
   # from IPython import embed; embed()
   inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
   print(inital, end='')
@@ -199,7 +229,7 @@ def test_case(fname, debug=False):
     if not debug:
       return False
 
-  show_unprocessed_processed(img, processed)
+  show_unprocessed_processed(img, model.cleaned)
 
 
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
