@@ -74,7 +74,10 @@ def compare_models(old_mod_class, new_mod_class):
     if old_pass and new_pass:
       print('both pass')
     elif not old_pass and not new_pass:
-      print('both fail')
+      if old_text == new_text:
+        print('both fail')
+      else:
+        print('both fail, change from {} to {}'.format(old_text, new_text))
     elif old_pass:
       print('NEW FAILS, new: {}'.format(new_text))
       # show_unprocessed_processed(img, new_mod.cleaned)
