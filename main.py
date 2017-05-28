@@ -20,6 +20,8 @@ parser.add_argument('--dump-test-cases', action='store_true')
 parser.add_argument('--test-all', action='store_true')
 parser.add_argument('--test')
 parser.add_argument('--dump-text', action='store_true')
+parser.add_argument('--cmp-old', help='old model to compare')
+parser.add_argument('--cmp-new', help='new model to compare')
 parser.add_argument('video_file', nargs='?')
 
 
@@ -29,6 +31,9 @@ def main(args):
     return
   if args.test:
     test_case(args.test, debug=True)
+    return
+  if args.cmp_old:
+    compare_models(MODELS[args.cmp_old], MODELS[args.cmp_new])
     return
   cap = cv2.VideoCapture(args.video_file)
   success = True
@@ -50,6 +55,31 @@ def main(args):
           cv2.imwrite('test_frame_{}__{}.png'.format(frame_idx, text), frame)
         else:
           show_unprocessed_processed(frame, model.cleaned)
+
+
+def compare_models(old_mod_class, new_mod_class):
+  for fname in get_all_test_frames():
+    img = cv2.imread(fname)
+    expected_text = fname.split('__')[1][:-4]
+    old_mod = old_mod_class()
+    old_text = old_mod.extract(img)
+    new_mod = new_mod_class()
+    new_text = new_mod.extract(img)
+    old_pass = old_text == expected_text
+    new_pass = new_text == expected_text
+
+    inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
+    print(inital, end='')
+    if old_pass and new_pass:
+      print('both pass')
+    elif not old_pass and not new_pass:
+      print('both fail')
+    elif old_pass:
+      print('NEW FAILS, new: {}, correct: {}; debugging new then old...'.format(new_text, expected_text))
+      show_unprocessed_processed(img, new_mod.cleaned)
+      show_unprocessed_processed(img, old_mod.cleaned)
+    else:
+      print('OLD FAILS, continuing')
 
 
 class TextExtractor:
@@ -227,8 +257,12 @@ def show_image(img):
 def show_unprocessed_processed(unp, p):
   cv2.imshow('unprocessed', unp)
   cv2.imshow('processed', p)
-  while cv2.waitKey(100) != ord('j'):
-    pass
+  while True:
+    k = cv2.waitKey(100)
+    if k == ord('q'):
+      raise Exception('quitting')
+    elif k == ord('j'):
+      break
 
   cv2.destroyAllWindows()
 
@@ -264,7 +298,7 @@ def test_all():
 def test_case(fname, debug=False):
   img = cv2.imread(fname)
   expected_text = fname.split('__')[1][:-4]
-  model = E0()
+  model = E1()
   actual_text = model.extract(img)
   # from IPython import embed; embed()
   inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
@@ -279,6 +313,12 @@ def test_case(fname, debug=False):
       return False
 
   show_unprocessed_processed(img, model.cleaned)
+
+
+MODELS = {
+  'e0': E0,
+  'e1': E1,
+}
 
 
 if __name__ == '__main__' and not hasattr(sys, 'ps1'):
