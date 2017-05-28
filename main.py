@@ -77,9 +77,9 @@ def compare_models(old_mod_class, new_mod_class):
     elif not old_pass and not new_pass:
       print('both fail')
     elif old_pass:
-      print('NEW FAILS, new: {}, correct: {}; debugging new then old...'.format(new_text, expected_text))
-      show_unprocessed_processed(img, new_mod.cleaned)
-      show_unprocessed_processed(img, old_mod.cleaned)
+      print('NEW FAILS, new: {}'.format(new_text))
+      # show_unprocessed_processed(img, new_mod.cleaned)
+      # show_unprocessed_processed(img, old_mod.cleaned)
     else:
       print('OLD FAILS, continuing')
 
