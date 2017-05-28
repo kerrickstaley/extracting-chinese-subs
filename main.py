@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 import cv2
+import os
 import sys
 import pyocr
 from PIL import Image
@@ -18,7 +19,7 @@ parser.add_argument('--dump-test-cases', action='store_true')
 parser.add_argument('--test-all', action='store_true')
 parser.add_argument('--test')
 parser.add_argument('--dump-text', action='store_true')
-parser.add_argument('video_file')
+parser.add_argument('video_file', nargs='?')
 
 
 def main(args):
@@ -162,10 +163,18 @@ def pad_string(s, l):
   return s + ' ' * (l - chars_taken)
 
 
+def get_all_test_frames():
+  for dirpath, dirnames, filenames in os.walk('test_frames'):
+    if 'unprocessed' in dirpath.split('/'):
+      continue
+    for filename in filenames:
+      yield os.path.join(dirpath, filename)
+
+
 def test_all():
   passes = 0
   cases = 0
-  for fname in sorted(glob.glob('test_frames/*.png')):
+  for fname in get_all_test_frames():
     passes += test_case(fname)
     cases += 1
 
@@ -178,7 +187,7 @@ def test_case(fname, debug=False):
   expected_text = fname.split('__')[1][:-4]
   processed, actual_text = get_processed_img_and_text(img)
   # from IPython import embed; embed()
-  inital = pad_string('file {}:'.format(fname.split('/')[-1]), 60)
+  inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
   print(inital, end='')
   if actual_text == expected_text:
     print('PASSED')
