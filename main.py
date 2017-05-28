@@ -133,6 +133,19 @@ class E0(TextExtractor):
     return img
 
 
+class E1(E0):
+  def clean_after_crop(self, cropped):
+    self.sharpened = img = sharpen(cropped)
+    self.thresholded = img = threshold(img, min_value=180)
+    self.canny_mask = cv2.Canny(cropped, 400, 600)
+    self.canny_mask = dilate(self.canny_mask, 5)
+    self.canny_mask = erode(self.canny_mask, 7)
+    img &= self.canny_mask
+    img = remove_small_islands(img)
+    img = dilate3(img)
+    return img
+
+
 def ngroupwise(n, iterable):
   # generalization of the "pairwise" recipe
   iterators = list(itertools.tee(iterable, n))
@@ -143,9 +156,9 @@ def ngroupwise(n, iterable):
   return zip(*iterators)
 
 
-def threshold(img):
+def threshold(img, min_value=170, max_saturation=25):
   hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-  return cv2.inRange(hsv, (0, 0, 170), (179, 25, 255))
+  return cv2.inRange(hsv, (0, 0, min_value), (179, max_saturation, 255))
 
 
 def dilate_erode5(img):
@@ -167,6 +180,30 @@ def dilate_erode3(img):
 def dilate3(img):
   kernel = np.ones((3, 3), np.uint8)
   return cv2.dilate(img, kernel)
+
+
+def dilate(img, n=3):
+  kernel = np.ones((n, n), np.uint8)
+  return cv2.dilate(img, kernel)
+
+
+def erode(img, n=3):
+  kernel = np.ones((n, n), np.uint8)
+  return cv2.erode(img, kernel)
+
+
+def sharpen(img):
+  blurred = cv2.GaussianBlur(img, (3, 3), 0)
+  return cv2.addWeighted(img, 2, blurred, -1, 0)
+
+
+def remove_small_islands(img, min_pixels=2):
+  mask = np.zeros(img.shape)
+  im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  for contour in contours:
+    if cv2.contourArea(contour) < min_pixels:
+      cv2.fillPoly(mask, pts=contour, color=(255, 255, 255))
+  return img - mask
 
 
 def show_image(img):
