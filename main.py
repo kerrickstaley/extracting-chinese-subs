@@ -217,14 +217,46 @@ class E2(E1):
     # subtract
     mask = dilate(mask, 3)
 
-    self.border_floodfill_mask = mask
-    if self.debug:
-      show_image(mask)
     return mask
 
   def clean_after_crop(self, cropped):
     img = super().clean_after_crop(cropped)
+    self.border_floodfill_mask = self.get_border_floodfill_mask()
+    if self.debug:
+      show_image(self.border_floodfill_mask)
     return img - self.get_border_floodfill_mask()
+
+
+class E3(E2):
+  def get_border_floodfill_mask(self):
+    h, w = self.thresholded.shape[:2]
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+
+    border_points = []
+    for r in range(5):
+      for c in range(w):
+        # top border
+        border_points.append((r, c))
+        # bottom border
+        border_points.append((h - 1 - r, c))
+    for c in range(5):
+      for r in range(h):
+        # left border
+        border_points.append((r, c))
+        # right border
+        border_points.append((r, w - 1 - c))
+
+    for r, c in border_points:
+        if not self.thresholded[r][c]:
+          continue
+        # The (255 << 8) incantation means set mask value to 255 when filling. The | 8 means do an 8-neighbor fill.
+        cv2.floodFill(self.thresholded, mask, (c, r), 255, flags=(255 << 8) | cv2.FLOODFILL_MASK_ONLY | 8)
+
+    # because we do a dilate3 in super().clean_after_crop, we also need to do that here so the mask matches when we
+    # subtract
+    mask = dilate(mask, 3)
+
+    return mask[1:-1, 1:-1]
 
 
 def ngroupwise(n, iterable):
@@ -390,6 +422,7 @@ MODELS = {
   'e0': E0,
   'e1': E1,
   'e2': E2,
+  'e3': E3,
 }
 
 
