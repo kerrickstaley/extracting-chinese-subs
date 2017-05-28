@@ -289,7 +289,7 @@ def get_all_test_frames():
 def test_all(model_class):
   passes = 0
   cases = 0
-  for fname in get_all_test_frames():
+  for fname in sorted(get_all_test_frames()):
     passes += test_case(model_class, fname)
     cases += 1
 
