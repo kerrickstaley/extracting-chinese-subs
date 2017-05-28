@@ -203,8 +203,8 @@ class E2(E1):
       left, top, width, height = cv2.boundingRect(contour)
       right = left + width
       bottom = top + height
-      if not (top <= 1 or left <= 1
-              or bottom >= self.thresholded.shape[0] - 2 or right >= self.thresholded.shape[1] - 2):
+      if not (top <= 4 or left <= 4
+              or bottom >= self.thresholded.shape[0] - 5 or right >= self.thresholded.shape[1] - 5):
         continue
 
       cv2.fillPoly(mask, pts=[contour], color=(255, 255, 255))
@@ -212,6 +212,10 @@ class E2(E1):
         if parent_idx != root_idx:
           continue
         cv2.fillPoly(mask, pts=[child_contour], color=(0, 0, 0))
+
+    # because we do a dilate3 in super().clean_after_crop, we also need to do that here so the mask matches when we
+    # subtract
+    mask = dilate(mask, 3)
 
     self.border_floodfill_mask = mask
     if self.debug:
