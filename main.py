@@ -20,7 +20,7 @@ parser.add_argument('--test')
 parser.add_argument('--dump-text', action='store_true')
 parser.add_argument('--cmp-old', help='old model to compare')
 parser.add_argument('--cmp-new', help='new model to compare')
-parser.add_argument('--model', help='model to use', default='e2')
+parser.add_argument('--model', help='model to use', default='e3')
 parser.add_argument('--debug', help='debug model', action='store_true')
 parser.add_argument('video_file', nargs='?')
 
