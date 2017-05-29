@@ -176,6 +176,12 @@ class E0(TextExtractor):
 
 
 class E1(E0):
+  def get_canny_mask(self, cropped):
+    mask = cv2.Canny(cropped, 400, 600)
+    mask = dilate(mask, 5)
+    mask = erode(mask, 5)
+    return mask
+
   def clean_after_crop(self, cropped):
     self.sharpened = img = sharpen(cropped)
     if self.debug:
@@ -183,9 +189,7 @@ class E1(E0):
     self.thresholded = img = threshold(img, min_value=191)
     if self.debug:
       show_image(self.thresholded)
-    self.canny_mask = cv2.Canny(cropped, 400, 600)
-    self.canny_mask = dilate(self.canny_mask, 5)
-    self.canny_mask = erode(self.canny_mask, 5)
+    self.canny_mask = self.get_canny_mask(cropped)
     img = img & self.canny_mask
     if self.debug:
       show_image(self.canny_mask)
@@ -258,6 +262,13 @@ class E3(E2):
 
     return mask[1:-1, 1:-1]
 
+
+class E4(E3):
+  def get_canny_mask(self, cropped):
+    mask = cv2.Canny(cropped, 400, 600)
+    mask = dilate(mask, 5)
+    mask = erode(mask, 3)
+    return mask
 
 def ngroupwise(n, iterable):
   # generalization of the "pairwise" recipe
@@ -423,6 +434,7 @@ MODELS = {
   'e1': E1,
   'e2': E2,
   'e3': E3,
+  'e4': E4,
 }
 
 
