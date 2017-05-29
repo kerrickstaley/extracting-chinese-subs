@@ -182,8 +182,12 @@ class E1(E0):
     mask = erode(mask, 5)
     return mask
 
+  def sharpen(self, img):
+    blurred = cv2.GaussianBlur(img, (3, 3), 0)
+    return cv2.addWeighted(img, 2, blurred, -1, 0)
+
   def clean_after_crop(self, cropped):
-    self.sharpened = img = sharpen(cropped)
+    self.sharpened = img = self.sharpen(cropped)
     if self.debug:
       show_image(self.sharpened)
     self.thresholded = img = threshold(img, min_value=191)
@@ -270,6 +274,13 @@ class E4(E3):
     mask = erode(mask, 3)
     return mask
 
+
+class E5(E3):
+  def sharpen(self, img):
+    blurred = cv2.GaussianBlur(img, (3, 3), 0)
+    return cv2.addWeighted(img, 2.7, blurred, -1.7, 0)
+
+
 def ngroupwise(n, iterable):
   # generalization of the "pairwise" recipe
   iterators = list(itertools.tee(iterable, n))
@@ -314,11 +325,6 @@ def dilate(img, n=3):
 def erode(img, n=3):
   kernel = np.ones((n, n), np.uint8)
   return cv2.erode(img, kernel)
-
-
-def sharpen(img):
-  blurred = cv2.GaussianBlur(img, (3, 3), 0)
-  return cv2.addWeighted(img, 2, blurred, -1, 0)
 
 
 def remove_small_islands(img, min_pixels=2):
@@ -435,6 +441,7 @@ MODELS = {
   'e2': E2,
   'e3': E3,
   'e4': E4,
+  'e5': E5,
 }
 
 
