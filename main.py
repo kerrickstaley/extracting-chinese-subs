@@ -151,20 +151,15 @@ class TextExtractor:
 
 
 class E0(TextExtractor):
-  TEXT_TOP = 810 / 934
-  TEXT_BOTTOM = 888 / 914
-  TEXT_LEFT = 250 / 1280  # min observed was 300 pixels in, each char is 50 pixels wide
-  TEXT_RIGHT = 1030 / 1280  # max observed was 300 pixels in from the right
+  TEXT_TOP = 621
+  TEXT_BOTTOM = 684
+  TEXT_LEFT = 250  # min observed was 300 pixels in, each char is 50 pixels wide
+  TEXT_RIGHT = 1030  # max observed was 300 pixels in from the right
 
   def clean_image(self, img):
-    if len(img.shape) == 3:
-      height, width, _ = img.shape
-    else:
-      height, width = img.shape
-    # TODO this is weird
     cropped = img[
-        int(height * self.TEXT_TOP): int(height * self.TEXT_BOTTOM),
-        int(width * self.TEXT_LEFT): int(width * self.TEXT_RIGHT)]
+        self.TEXT_TOP: self.TEXT_BOTTOM,
+        self.TEXT_LEFT: self.TEXT_RIGHT]
     return self.clean_after_crop(cropped)
 
   def clean_after_crop(self, cropped):
