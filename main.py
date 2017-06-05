@@ -276,6 +276,40 @@ class E5(E3):
     return cv2.addWeighted(img, 2.7, blurred, -1.7, 0)
 
 
+class B0(E0):
+  """
+  The first model I blogged about (in the Part 1 article).
+
+  Pass rate: 18%.
+  """
+
+  def clean_after_crop(self, cropped):
+    img = cv2.inRange(cropped, (200, 200, 200), (255, 255, 255))
+    return img
+
+
+class B1(B0):
+  """
+  Thresholding using HSV.
+
+  Pass rate: 26%.
+  """
+
+  def clean_after_crop(self, cropped):
+    return threshold(cropped, min_value=180, max_saturation=30)
+
+
+class B2(B1):
+  """
+  Dilating the output of B1.
+
+  Pass rate: 52%.
+  """
+
+  def clean_after_crop(self, cropped):
+    return dilate(super().clean_after_crop(cropped), 3)
+
+
 def ngroupwise(n, iterable):
   # generalization of the "pairwise" recipe
   iterators = list(itertools.tee(iterable, n))
@@ -437,6 +471,9 @@ MODELS = {
   'e3': E3,
   'e4': E4,
   'e5': E5,
+  'b0': B0,
+  'b1': B1,
+  'b2': B2,
 }
 
 
