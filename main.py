@@ -449,7 +449,6 @@ def test_case(model_class, fname, debug=False):
   expected_text = fname.split('__')[1][:-4]
   model = model_class(debug=debug)
   actual_text = model.extract(img)
-  # from IPython import embed; embed()
   inital = pad_string('file {}:'.format('/'.join(fname.split('/')[-2:])), 60)
   print(inital, end='')
   if actual_text == expected_text:
