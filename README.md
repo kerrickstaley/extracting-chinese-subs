@@ -5,7 +5,7 @@ To get started, install OpenCV, Tesseract, the `chi_sim` data pack for Tesseract
 
 ```
 sudo pacman -S opencv python-numpy tesseract tesseract-data-chi_sim
-sudo pip install pyocr
+sudo pip install pyocr opencv-python
 ```
 
 Then try running `./main.py --test-all` to test the extraction algorithm on all test cases. To run it on a video file, you'll need to track down a 1280x720 video of one of the 他来了请闭眼 episodes with white hard subs at the bottom, similar to the test frames.
